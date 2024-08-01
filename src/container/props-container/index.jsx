@@ -1,4 +1,5 @@
 import { Actor, HttpAgent } from "@dfinity/agent";
+import { ethers } from "ethers";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
@@ -6,17 +7,29 @@ import Notify from "../../component/notification";
 import { apiFactory } from "../../ordinal_canister";
 import {
   setAgent,
+  setAllBorrowRequest,
   setApprovedCollection,
   setBnbValue,
+  setBorrowCollateral,
   setBtcValue,
   setCollection,
+  setUserAssets,
+  setUserCollateral,
 } from "../../redux/slice/constant";
+import { rootstockApiFactory } from "../../rootstock_canister";
+import borrowJson from "../../utils/borrow_abi.json";
 import {
   API_METHODS,
+  BorrowContractAddress,
+  IS_USER,
+  TokenContractAddress,
+  agentCreator,
   apiUrl,
   calculateAPY,
   ordinals,
+  rootstock,
 } from "../../utils/common";
+import tokenAbiJson from "../../utils/tokens_abi.json";
 
 export const propsContainer = (Component) => {
   function ComponentWithRouterProp(props) {
@@ -25,10 +38,21 @@ export const propsContainer = (Component) => {
     const navigate = useNavigate();
     const location = useLocation();
     const reduxState = useSelector((state) => state);
-
     const activeWallet = reduxState.wallet.active;
+    const xverseAddress = reduxState.wallet.xverse.ordinals.address;
+    const unisatAddress = reduxState.wallet.unisat.address;
+    const magicEdenAddress = reduxState.wallet.magicEden.ordinals.address;
+    const metaAddress = reduxState.wallet.meta.address;
     const api_agent = reduxState.constant.agent;
     const bnbValue = reduxState.constant.bnbValue;
+    const collections = reduxState.constant.collection;
+    const approvedCollections = reduxState.constant.approvedCollections;
+    const userAssets = reduxState.constant.userAssets;
+    const ckBtcAgent = reduxState.constant.ckBtcAgent;
+    const ckBtcActorAgent = reduxState.constant.ckBtcActorAgent;
+    const ckEthAgent = reduxState.constant.ckEthAgent;
+    const ckEthActorAgent = reduxState.constant.ckEthActorAgent;
+    const withdrawAgent = reduxState.constant.withdrawAgent;
 
     const [isEthConnected, setIsEthConnected] = useState(false);
 
@@ -44,6 +68,14 @@ export const propsContainer = (Component) => {
         })();
       }
     }, [activeWallet.length]);
+
+    const address = xverseAddress
+      ? xverseAddress
+      : unisatAddress
+      ? unisatAddress
+      : magicEdenAddress;
+
+    const WAHEED_ADDRESS = process.env.REACT_APP_WAHEED_ADDRESS;
 
     const btcPrice = async () => {
       const BtcData = await API_METHODS.get(
@@ -91,7 +123,7 @@ export const propsContainer = (Component) => {
     useEffect(() => {
       (() => {
         setInterval(async () => {
-          fetchBTCLiveValue();
+          if (ckBtcAgent) fetchBTCLiveValue();
         }, [300000]);
         return () => clearInterval();
       })();
@@ -139,6 +171,156 @@ export const propsContainer = (Component) => {
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [api_agent, dispatch]);
 
+    const getCollectionDetails = async (filteredData) => {
+      try {
+        const isFromApprovedAssets = filteredData.map(async (asset) => {
+          return new Promise(async (resolve) => {
+            const result = await API_METHODS.get(
+              `${apiUrl.Asset_server_base_url}/api/v2/fetch/asset/${asset.id}`
+            );
+            resolve(...result.data?.data?.tokens);
+          });
+        });
+        const revealedPromise = await Promise.all(isFromApprovedAssets);
+        let collectionSymbols = {};
+        collections.forEach(
+          (collection) =>
+            (collectionSymbols = {
+              ...collectionSymbols,
+              [collection.symbol]: collection,
+            })
+        );
+        const collectionNames = collections.map(
+          (collection) => collection.symbol
+        );
+        const isFromApprovedCollections = revealedPromise.filter((assets) =>
+          collectionNames.includes(assets.collectionSymbol)
+        );
+
+        const finalPromise = isFromApprovedCollections.map((asset) => {
+          const collection = collectionSymbols[asset.collectionSymbol];
+          return {
+            ...asset,
+            collection,
+          };
+        });
+        return finalPromise;
+      } catch (error) {
+        console.log("getCollectionDetails error", error);
+      }
+    };
+
+    const fetchWalletAssets = async (address) => {
+      try {
+        const result = await API_METHODS.get(
+          `${apiUrl.Asset_server_base_url}/api/v1/fetch/assets/${address}`
+        );
+        if (result.data?.data?.length) {
+          const filteredData = result.data.data.filter(
+            (asset) =>
+              asset.mimeType === "text/html" ||
+              asset.mimeType === "image/webp" ||
+              asset.mimeType === "image/jpeg" ||
+              asset.mimeType === "image/png" ||
+              asset.mimeType === "image/svg+xml"
+          );
+          const finalPromise = await getCollectionDetails(filteredData);
+          return finalPromise;
+        } else {
+          return [];
+        }
+      } catch (error) {
+        console.log("error", error);
+      }
+    };
+
+    const getCollaterals = async () => {
+      let colResult = [];
+      try {
+        const API = agentCreator(rootstockApiFactory, rootstock);
+        const userAssets = await API.getUserSupply(
+          IS_USER ? address : WAHEED_ADDRESS
+        );
+        const supplyData = userAssets.map((asset) => JSON.parse(asset));
+        colResult = await getCollectionDetails(supplyData);
+        // --------------------------------------------------
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        const signer = provider.getSigner();
+        const contract = new ethers.Contract(
+          TokenContractAddress,
+          tokenAbiJson,
+          signer
+        );
+
+        const tokens = await contract.tokensOfOwner(metaAddress);
+
+        const userMintedTokens = tokens.map((token) =>
+          Number(token.toString())
+        );
+
+        const finalData = colResult.map((asset) => {
+          let data = { ...asset, collection: {} };
+          approvedCollections.forEach((col) => {
+            if (col.symbol === asset.collection.symbol) {
+              data = {
+                ...asset,
+                collection: col,
+                isToken: userMintedTokens.includes(asset.inscriptionNumber)
+                  ? true
+                  : false,
+              };
+            }
+          });
+          return data;
+        });
+
+        const borrowCollateral = finalData.filter((asset) => asset.isToken);
+        dispatch(setBorrowCollateral(borrowCollateral));
+        dispatch(setUserCollateral(finalData));
+      } catch (error) {
+        if (
+          error.message.includes("No NFT found") ||
+          error.message.includes("No single NFT has been minted yet")
+        ) {
+          const finalData = colResult.map((asset) => {
+            let data = { ...asset, collection: {} };
+            approvedCollections.forEach((col) => {
+              if (col.symbol === asset.collection.symbol) {
+                data = {
+                  ...asset,
+                  collection: col,
+                  isToken: [].includes(asset.inscriptionNumber) ? true : false,
+                };
+              }
+            });
+            return data;
+          });
+
+          const borrowCollateral = finalData.filter((asset) => asset.isToken);
+          dispatch(setBorrowCollateral(borrowCollateral));
+          dispatch(setUserCollateral(finalData));
+        } else {
+          console.log("Collateral fetching error", error.message);
+        }
+      }
+    };
+
+    const getAllBorrowRequests = async () => {
+      try {
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        const signer = provider.getSigner();
+        const borrowContract = new ethers.Contract(
+          BorrowContractAddress,
+          borrowJson,
+          signer
+        );
+        const ActiveReq = await borrowContract.getActiveBorrowRequests();
+        dispatch(setAllBorrowRequest(ActiveReq));
+      } catch (error) {
+        console.log("fetching all borrow request error", error);
+      }
+    };
+
     const fetchBnBPrice = async () => {
       try {
         const bnbData = await API_METHODS.get(
@@ -167,6 +349,67 @@ export const propsContainer = (Component) => {
     }, [api_agent, dispatch]);
 
     useEffect(() => {
+      (async () => {
+        if (activeWallet.length && collections[0]?.symbol && !userAssets) {
+          const result = await fetchWalletAssets(
+            IS_USER
+              ? xverseAddress
+                ? xverseAddress
+                : unisatAddress
+                ? unisatAddress
+                : magicEdenAddress
+              : WAHEED_ADDRESS
+          );
+          const testData = result?.reduce((acc, curr) => {
+            // Find if there is an existing item with the same collectionSymbol
+            let existingItem = acc.find(
+              (item) => item.collectionSymbol === curr.collectionSymbol
+            );
+
+            if (existingItem) {
+              // If found, add the current item to the duplicates array
+              if (!existingItem.duplicates) {
+                existingItem.duplicates = [];
+              }
+              existingItem.duplicates.push(curr);
+            } else {
+              // If not found, add the current item to the accumulator
+              acc.push(curr);
+            }
+
+            return acc;
+          }, []);
+
+          // Without getting duplicate
+          // const uniqueData = result?.filter(
+          //   (obj, index, self) =>
+          //     index ===
+          //     self.findIndex((o) => o.collectionSymbol === obj.collectionSymbol)
+          // );
+
+          if (testData?.length) {
+            dispatch(setUserAssets(testData));
+          }
+        }
+      })();
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [activeWallet, collections]);
+
+    useEffect(() => {
+      if (activeWallet.length && approvedCollections[0]) {
+        getCollaterals();
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [activeWallet, approvedCollections]);
+
+    useEffect(() => {
+      if (activeWallet.length) {
+        getAllBorrowRequests();
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [activeWallet]);
+
+    useEffect(() => {
       //Fetching BTC Value
       fetchBTCLiveValue();
 
@@ -181,7 +424,14 @@ export const propsContainer = (Component) => {
         redux={{ dispatch, reduxState }}
         wallet={{
           api_agent,
+          ckBtcAgent,
+          ckEthAgent,
+          withdrawAgent,
           isEthConnected,
+          ckBtcActorAgent,
+          ckEthActorAgent,
+          getCollaterals,
+          getAllBorrowRequests,
         }}
       />
     );

@@ -143,7 +143,8 @@ const BridgeOrdinals = (props) => {
           <Flex gap={5} vertical align="center">
             {obj.contentType === "image/webp" ||
             obj.contentType === "image/jpeg" ||
-            obj.contentType === "image/png" ? (
+            obj.contentType === "image/png" ||
+            obj.contentType === "image/svg+xml" ? (
               <img
                 src={`${CONTENT_API}/content/${obj.id}`}
                 alt={`${obj.id}-borrow_image`}
@@ -153,8 +154,7 @@ const BridgeOrdinals = (props) => {
               />
             ) : obj.contentType === "image/svg" ||
               obj.contentType === "text/html;charset=utf-8" ||
-              obj.contentType === "text/html" ||
-              obj.contentType === "image/svg+xml" ? (
+              obj.contentType === "text/html" ? (
               <iframe
                 loading="lazy"
                 width={"80px"}

@@ -1130,7 +1130,7 @@ input::-webkit-input-placeholder {
 
 .click-btn {
   display: inline-block;
-  height: 55px;
+  height: 50px;
   border-radius: 8px;
   transition: all 0.2s ease-in;
   position: relative;
@@ -1139,7 +1139,7 @@ input::-webkit-input-placeholder {
   font-size: 17px;
   cursor: pointer;
   color: #ffffff;
-  border: 1px solid var(--secondary-blue);
+  border: 1px solid var(--main-yellow);
   z-index: 1;
 }
 
@@ -1154,7 +1154,7 @@ input::-webkit-input-placeholder {
   background-color: rgba(0, 0, 0, 0.05);
   border-radius: 50%;
   display: block;
-  transition: all 0.5s 0.1s cubic-bezier(0.55, 0, 0.1, 1);
+  transition: all 0.3s 0.1s cubic-bezier(0.55, 0, 0.1, 1);
   z-index: -1;
 }
 
@@ -1166,27 +1166,27 @@ input::-webkit-input-placeholder {
   top: 180%;
   width: 160%;
   height: 190%;
-  background-color: var(--secondary-blue);
+  background-color: var(--main-yellow);
   border-radius: 50%;
   display: block;
-  transition: all 0.5s 0.1s cubic-bezier(0.55, 0, 0.1, 1);
+  transition: all 0.3s 0.1s cubic-bezier(0.55, 0, 0.1, 1);
   z-index: -1;
 }
 
 .click-btn:hover {
-  color: #ffffff;
-  border: 1px solid var(--secondary-blue);
+  color: #000000 !important;
+  border: 1px solid var(--main-yellow);
 }
 
 .click-btn:hover:before {
   top: -35%;
-  background-color: var(--secondary-blue);
+  background-color: var(--main-yellow);
   transform: translateX(-50%) scaleY(1.3) scaleX(0.8);
 }
 
 .click-btn:hover:after {
   top: -45%;
-  background-color: var(--secondary-blue);
+  background-color: var(--main-yellow);
   transform: translateX(-50%) scaleY(1.3) scaleX(0.8);
 }
 

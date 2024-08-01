@@ -599,6 +599,9 @@ const Nav = (props) => {
                       ? "headertitle headerStyle"
                       : "font-style headerCompanyName"
                   } pointer heading-one `}
+                  onClick={() => {
+                    navigate("/borrowing");
+                  }}
                 >
                   Borrowing
                 </Text>
