@@ -588,6 +588,9 @@ const Nav = (props) => {
                       ? "headertitle headerStyle"
                       : "font-style headerCompanyName"
                   } pointer heading-one `}
+                  onClick={() => {
+                    navigate("/lending");
+                  }}
                 >
                   Lending
                 </Text>
