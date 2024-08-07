@@ -17,6 +17,11 @@ export const publicRoutes = [
     component: lazy(() => import("../pages/borrowing")),
   },
   {
+    name: "Portfolio",
+    path: "/portfolio",
+    component: lazy(() => import("../pages/portfolio")),
+  },
+  {
     name: "Page 404",
     path: "*",
     component: lazy(() => import("../pages/404")),
