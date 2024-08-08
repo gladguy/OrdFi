@@ -287,6 +287,41 @@ const Nav = (props) => {
 
           if (Number(networkId) !== 97) {
             Notify("error", "Switch to the tBNB network!");
+            const chainId = "0x61"; // BNB Testnet Chain ID in hexadecimal (97 in decimal)
+            try {
+              await window.ethereum.request({
+                method: "wallet_switchEthereumChain",
+                params: [{ chainId }],
+              });
+            } catch (switchError) {
+              if (switchError.code === 4902) {
+                // This error code indicates that the chain has not been added to MetaMask.
+                try {
+                  await window.ethereum.request({
+                    method: "wallet_addEthereumChain",
+                    params: [
+                      {
+                        chainId,
+                        chainName: "Binance Smart Chain Testnet",
+                        rpcUrls: [
+                          "https://data-seed-prebsc-1-s1.binance.org:8545/",
+                        ],
+                        blockExplorerUrls: ["https://testnet.bscscan.com"],
+                        nativeCurrency: {
+                          name: "Binance Coin",
+                          symbol: "BNB",
+                          decimals: 18,
+                        },
+                      },
+                    ],
+                  });
+                } catch (addError) {
+                  console.error("Failed to add the network:", addError);
+                }
+              } else {
+                console.error("Failed to switch the network:", switchError);
+              }
+            }
             return;
           }
           setWalletConnection({
@@ -643,6 +678,9 @@ const Nav = (props) => {
                       ? "headertitle headerStyle"
                       : "font-style headerCompanyName"
                   } pointer heading-one `}
+                  onClick={() => {
+                    navigate("/activeloans");
+                  }}
                 >
                   Active Loans
                 </Text>
