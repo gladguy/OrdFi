@@ -137,9 +137,9 @@ export const calculateOrdinalInBNB = (ordinalFloor, BTCPriceInUSD, BNBPriceInUSD
 }
 
 
-export const IndexContractAddress = "0x144D55eB33A4dabD39Ee1c7d9e177B56EdDaa041";
-export const TokenContractAddress = "0xc59e407A330CC56362a8cE3759375449598CDfE6";
-export const BorrowContractAddress = "0xD9614C6d0807923cE2788823a8FEf1fa25D8ADd8";
+export const IndexContractAddress = process.env.REACT_APP_REGISTRATION;
+export const TokenContractAddress = process.env.REACT_APP_NFT;
+export const BorrowContractAddress = process.env.REACT_APP_LOAN_LEDGER;
 
 export const contractGenerator = async (abi, contractAddress) => {
   const web3 = new Web3(window.ethereum);
