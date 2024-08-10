@@ -2,6 +2,11 @@ import { lazy } from "react";
 
 export const publicRoutes = [
   {
+    name: "Home",
+    path: "/",
+    component: lazy(() => import("../pages/home")),
+  },
+  {
     name: "BridgeOrdinals",
     path: `/bridge`,
     component: lazy(() => import("../pages/bridgeOrdinals")),

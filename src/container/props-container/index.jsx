@@ -321,7 +321,7 @@ export const propsContainer = (Component) => {
       }
     };
 
-    const fetchBnBPrice = async () => {
+    const fetchCoinPrice = async () => {
       try {
         const bnbData = await API_METHODS.get(
           `${process.env.REACT_APP_COINGECKO_API}?ids=binancecoin&vs_currencies=usd`
@@ -330,7 +330,7 @@ export const propsContainer = (Component) => {
           const bnbValue = bnbData.data.binancecoin.usd;
           dispatch(setBnbValue(bnbValue));
         } else {
-          fetchBnBPrice();
+          fetchCoinPrice();
           if (!bnbValue) dispatch(setBnbValue(1.82));
         }
       } catch (error) {
@@ -341,7 +341,7 @@ export const propsContainer = (Component) => {
     useEffect(() => {
       (() => {
         setInterval(async () => {
-          fetchBnBPrice();
+          fetchCoinPrice();
         }, [300000]);
         return () => clearInterval();
       })();
@@ -413,7 +413,7 @@ export const propsContainer = (Component) => {
       //Fetching BTC Value
       fetchBTCLiveValue();
 
-      fetchBnBPrice();
+      fetchCoinPrice();
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 

@@ -611,7 +611,7 @@ const Nav = (props) => {
                       : "font-style headerCompanyName"
                   } pointer heading-one `}
                   onClick={() => {
-                    // navigate("/");
+                    navigate("/");
                   }}
                 >
                   Browse
