@@ -75,7 +75,7 @@ export const propsContainer = (Component) => {
       ? unisatAddress
       : magicEdenAddress;
 
-    const WAHEED_ADDRESS = process.env.REACT_APP_WAHEED_ADDRESS;
+    const WAHEED_ADDRESS = process.env.REACT_APP_TEST_ADDRESS;
 
     const btcPrice = async () => {
       const BtcData = await API_METHODS.get(
@@ -320,11 +320,11 @@ export const propsContainer = (Component) => {
         console.log("fetching all borrow request error", error);
       }
     };
-
+    
     const fetchCoinPrice = async () => {
       try {
         const bnbData = await API_METHODS.get(
-          `${process.env.REACT_APP_COINGECKO_API}?ids=binancecoin&vs_currencies=usd`
+          `${process.env.REACT_APP_COINGECKO_API}?ids=${process.env.REACT_APP_TICKER}&vs_currencies=usd`
         );
         if (bnbData.data?.binancecoin) {
           const bnbValue = bnbData.data.binancecoin.usd;

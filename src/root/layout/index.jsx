@@ -254,7 +254,7 @@ const MainLayout = () => {
                             >
                               <Tooltip
                                 arrow
-                                title={"myordinalsloan@gmail.com"}
+                                title={"ordfi@gmail.com"}
                                 trigger={"hover"}
                               >
                                 <Text className="font-xlarge">
