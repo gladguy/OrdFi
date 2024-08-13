@@ -287,7 +287,8 @@ const Nav = (props) => {
 
           if (Number(networkId) !== 97) {
             Notify("error", "Switch to the tBNB network!");
-            const chainId = "0x61"; // BNB Testnet Chain ID in hexadecimal (97 in decimal)
+            const chainId = "97"; // BNB Testnet Chain ID in hexadecimal (97 in decimal)
+            //const chainId = "0x61";
             try {
               await window.ethereum.request({
                 method: "wallet_switchEthereumChain",
