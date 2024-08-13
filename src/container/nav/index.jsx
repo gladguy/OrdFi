@@ -11,7 +11,6 @@ import {
   Tooltip,
   Typography,
 } from "antd";
-import { ethers } from "ethers";
 import gsap from "gsap";
 import React, { useEffect, useState } from "react";
 import { AiOutlineDisconnect } from "react-icons/ai";
@@ -36,23 +35,25 @@ import {
   setUnisatCredentials,
   setXverseCredentials,
 } from "../../redux/slice/wallet";
-import { rootstockApiFactory } from "../../rootstock_canister";
+import { storageIdlFactory } from "../../storage_canister";
 import {
   agentCreator,
   API_METHODS,
   apiUrl,
   BTCWallets,
+  chainId,
   IndexContractAddress,
   MAGICEDEN_WALLET_KEY,
   META_WALLET_KEY,
   paymentWallets,
-  rootstock,
   sliceAddress,
+  storage,
   UNISAT_WALLET_KEY,
   XVERSE_WALLET_KEY,
 } from "../../utils/common";
 import indexJson from "../../utils/index_abi.json";
 import { propsContainer } from "../props-container";
+import { ethers } from "ethers";
 
 const Nav = (props) => {
   const { Text } = Typography;
@@ -71,6 +72,7 @@ const Nav = (props) => {
   const magicEdenAddress = walletState.magicEden.ordinals.address;
 
   const [isConnectModal, setConnectModal] = useState(false);
+  const [tabKey, setTabKey] = useState("1");
   const [open, setOpen] = useState(false);
   const [screenDimensions, setScreenDimensions] = React.useState({
     width: window.screen.width,
@@ -287,8 +289,6 @@ const Nav = (props) => {
 
           if (Number(networkId) !== 97) {
             Notify("error", "Switch to the tBNB network!");
-            const chainId = "97"; // BNB Testnet Chain ID in hexadecimal (97 in decimal)
-            //const chainId = "0x61";
             try {
               await window.ethereum.request({
                 method: "wallet_switchEthereumChain",
@@ -365,7 +365,7 @@ const Nav = (props) => {
     try {
       dispatch(setLoading(true));
       let isConnectionExist = false;
-      const API = agentCreator(rootstockApiFactory, rootstock);
+      const API = agentCreator(storageIdlFactory, storage);
       const btcAddress = walletConnection?.xverse
         ? walletConnection.xverse.ordinals.address
         : walletConnection?.magiceden
@@ -373,9 +373,6 @@ const Nav = (props) => {
         : walletConnection?.unisat?.address;
       const metaAddress = walletConnection.meta.address;
 
-      const isBtcExist = await API.retrieveByEthereumAddress(metaAddress);
-      const isEthExist = await API.retrieveByBitcoinAddress(btcAddress);
-      const isCounterExist = await API.retrieve(metaAddress);
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       const signer = provider.getSigner();
       const contract = new ethers.Contract(
@@ -386,48 +383,51 @@ const Nav = (props) => {
       const isAcExist = await contract.getBitcoinAddressId(metaAddress);
       const isAccountExistInABI = Number(isAcExist.toString());
 
-      // console.log(isBtcExist, isEthExist, isCounterExist, isAccountExistInABI);
+      let verifyAddress = await API.verifyAddressPair({
+        chain_id: chainId,
+        bitcoinAddress: btcAddress,
+        ethereumAddress: metaAddress,
+      });
+      verifyAddress = Number(verifyAddress);
 
-      if (
-        isAccountExistInABI &&
-        isEthExist[0] === metaAddress &&
-        isBtcExist[0] === btcAddress
-      ) {
+      if (verifyAddress === 0 && isAccountExistInABI) {
         isConnectionExist = true;
-      } else if (
-        (!isBtcExist.length && !isEthExist.length) ||
-        !isAccountExistInABI
-      ) {
-        let counter;
-        if (isCounterExist.length) {
-          counter = isCounterExist[0];
-        } else {
-          counter = await API.storeAddress({
-            bitcoinAddress: btcAddress,
-            ethereumAddress: metaAddress,
-          });
-        }
+      } else if (verifyAddress === 1) {
+        const btcAddress = await API.getByEthereumAddress({
+          chainId: chainId,
+          ethereumAddress: metaAddress,
+        });
+        Notify(
+          "warning",
+          `Account not found, try connecting ${btcAddress} BTC account!`
+        );
+      } else if (verifyAddress === 2) {
+        const ethAddress = await API.getByBitcoinAddress({
+          chainId: chainId,
+          bitcoinAddress: btcAddress,
+        });
+        Notify(
+          "warning",
+          `Account not found, try connecting ${ethAddress} ETH account!`
+        );
+      } else if (verifyAddress === 3) {
+        const storeAddress = await API.storeAddress({
+          chain_id: chainId,
+          bitcoinAddress: btcAddress,
+          ethereumAddress: metaAddress,
+        });
+
         if (!isAccountExistInABI) {
           const saveResult = await contract.saveBitcoinAddress(
-            Number(counter),
+            Number(storeAddress),
             metaAddress
           );
-
+          await saveResult.wait();
           if (saveResult.hash) {
             Notify("success", "Account creation success!", 3000);
           }
         }
         isConnectionExist = true;
-      } else if (isEthExist[0] !== metaAddress) {
-        Notify(
-          "warning",
-          "Account not found, try connecting other ETH account!"
-        );
-      } else if (isBtcExist[0] !== btcAddress) {
-        Notify(
-          "warning",
-          "Account not found, try connecting other BTC account!"
-        );
       }
 
       if (isConnectionExist) {
@@ -440,6 +440,8 @@ const Nav = (props) => {
       dispatch(setLoading(false));
     } catch (error) {
       dispatch(setLoading(false));
+      setWalletConnection({});
+      setActiveConnections([]);
       console.log("finish connection error", error);
     }
   };
@@ -756,6 +758,7 @@ const Nav = (props) => {
           setWalletConnection({});
           setActiveConnections([]);
         }}
+        destroyOnClose={true}
         width={breakPoint.xs ? "100%" : "32%"}
       >
         <Row justify={"start"} align={"middle"}>
@@ -789,6 +792,10 @@ const Nav = (props) => {
         <Row>
           <Col>
             <Tabs
+              activeKey={tabKey}
+              onChange={(e) => {
+                e !== "3" && setTabKey(e);
+              }}
               items={[
                 {
                   key: "1",

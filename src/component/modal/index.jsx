@@ -6,23 +6,25 @@ const ModalDisplay = ({
   title,
   open,
   onOK,
-  onCancel,
+  style,
   footer,
+  onCancel,
   children,
   className,
-  style,
+  destroyOnClose,
 }) => {
   return (
     <Modal
-      style={style}
       forceRender
-      width={width}
       open={open}
       onOk={onOK}
-      onCancel={onCancel}
-      footer={footer}
-      className={className}
+      style={style}
+      width={width}
       title={title}
+      footer={footer}
+      onCancel={onCancel}
+      className={className}
+      destroyOnClose={destroyOnClose}
     >
       {children}
     </Modal>

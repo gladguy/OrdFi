@@ -596,7 +596,7 @@ body {
 
 /* Notify text color */
 .ant-notification .ant-notification-notice .ant-notification-notice-message {
-  color: white !important;
+  color: whitesmoke !important;
 }
 
 /* Cut off the extra margin in notify text */
@@ -2107,7 +2107,7 @@ figure:hover+span {
 
 .collection-bg {
   background-color: #2d3436;
-  background-image: linear-gradient(315deg, #2d3436 2%, #000000 50%);
+  background-image: linear-gradient(315deg, #2e2a15 2%, #000000 50%);
 }
 
 .collection-bg-one {
