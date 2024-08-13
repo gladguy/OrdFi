@@ -80,6 +80,7 @@ const Nav = (props) => {
   });
   const [current, setCurrent] = useState();
   const [activeConnections, setActiveConnections] = useState([]);
+  const [activeAddresses, setActiveAddresses] = useState({});
   const [walletConnection, setWalletConnection] = useState({});
 
   const avatar = process.env.REACT_APP_AVATAR;
@@ -170,7 +171,10 @@ const Nav = (props) => {
             });
             // collapseConnectedModal();
             setActiveConnections([...activeConnections, XVERSE_WALLET_KEY]);
-
+            setActiveAddresses({
+              ...activeAddresses,
+              [XVERSE_WALLET_KEY]: ordinals.address,
+            });
             successMessageNotify("x-verse Wallet connected!");
           }
         },
@@ -190,15 +194,6 @@ const Nav = (props) => {
           let publicKey = await window.unisat.getPublicKey();
           let { confirmed: BtcBalance } = await window.unisat.getBalance();
           dispatch(setLoading(false));
-
-          // collapseConnectedModal();
-          // dispatch(
-          //   setUnisatCredentials({
-          //     address: accounts[0],
-          //     publicKey,
-          //     BtcBalance: BtcBalance / process.env.REACT_APP_BTC_ZERO,
-          //   })
-          // );
           setWalletConnection({
             ...walletConnection,
             [UNISAT_WALLET_KEY]: {
@@ -208,7 +203,10 @@ const Nav = (props) => {
             },
           });
           setActiveConnections([...activeConnections, UNISAT_WALLET_KEY]);
-
+          setActiveAddresses({
+            ...activeAddresses,
+            [UNISAT_WALLET_KEY]: accounts[0],
+          });
           successMessageNotify("Unisat Wallet connected!");
         } catch (error) {
           dispatch(setLoading(false));
@@ -250,15 +248,6 @@ const Nav = (props) => {
 
             const magicEdenBtc =
               result.data.data.satoshi / process.env.REACT_APP_BTC_ZERO;
-
-            // dispatch(
-            //   setMagicEdenCredentials({
-            //     ordinals,
-            //     payment,
-            //     btcBalance: magicEdenBtc,
-            //   })
-            // );
-
             setWalletConnection({
               ...walletConnection,
               [MAGICEDEN_WALLET_KEY]: {
@@ -268,7 +257,10 @@ const Nav = (props) => {
               },
             });
             setActiveConnections([...activeConnections, MAGICEDEN_WALLET_KEY]);
-            // collapseConnectedModal();
+            setActiveAddresses({
+              ...activeAddresses,
+              [MAGICEDEN_WALLET_KEY]: ordinals.address,
+            });
             successMessageNotify("Magiceden Wallet connected!");
           },
           onCancel: () => {
@@ -325,6 +317,7 @@ const Nav = (props) => {
             }
             return;
           }
+          Notify("success", "Metamask wallet connected!");
           setWalletConnection({
             ...walletConnection,
             [META_WALLET_KEY]: {
@@ -333,6 +326,10 @@ const Nav = (props) => {
             },
           });
           setActiveConnections([...activeConnections, META_WALLET_KEY]);
+          setActiveAddresses({
+            ...activeAddresses,
+            [META_WALLET_KEY]: accounts[0],
+          });
         } catch (error) {
           console.error("User denied account access", error);
         }
@@ -788,6 +785,26 @@ const Nav = (props) => {
             Note: Connect one wallet from each category.
           </Text>
         </Row>
+
+        <Row justify={"center"}>
+          <Divider />
+        </Row>
+
+        {Object.entries(activeAddresses).map((wallet) => {
+          const [walletName, address] = wallet;
+          return (
+            <Row>
+              <Flex gap={15}>
+                <Text className="text-color-one font-medium">
+                  {walletName === "meta" ? "Payment" : "Ordinals"} {"-->"}
+                </Text>
+                <Text className="text-color-four font-small">
+                  {sliceAddress(address, 9)} {addressRendererWithCopy(address)}
+                </Text>
+              </Flex>
+            </Row>
+          );
+        })}
 
         <Row>
           <Col>
