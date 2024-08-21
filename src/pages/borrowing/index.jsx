@@ -212,7 +212,7 @@ const Borrowing = (props) => {
       dataIndex: "floor",
       render: (_, obj) => {
         const data = calculateOrdinalInBNB(
-          Number(obj.floorPrice),
+          Number(obj.floorPrice) ? Number(obj.floorPrice) : 30000,
           btcvalue,
           bnbValue
         );
@@ -519,8 +519,6 @@ const Borrowing = (props) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeWallet]);
 
-  // console.log("isBorrowApproved", isBorrowApproved);
-  // console.log("borrowModalData", borrowModalData);
   return (
     <>
       <Row justify={"space-between"} align={"middle"}>

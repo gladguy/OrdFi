@@ -161,7 +161,7 @@ const Lending = (props) => {
       dataIndex: "floor",
       render: (_, obj) => {
         const data = calculateOrdinalInBNB(
-          Number(obj.floorPrice),
+          Number(obj.floorPrice) ? Number(obj.floorPrice) : 30000,
           btcvalue,
           bnbValue
         );

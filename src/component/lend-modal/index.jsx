@@ -90,7 +90,7 @@ const LendModal = ({
       }
     }
   };
-  console.log("lendModalData", lendModalData);
+  // console.log("lendModalData", lendModalData);
   return (
     <ModalDisplay
       footer={null}

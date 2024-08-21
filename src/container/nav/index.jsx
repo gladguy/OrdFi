@@ -158,9 +158,6 @@ const Nav = (props) => {
 
             const xverseBtc =
               result.data.data.satoshi / process.env.REACT_APP_BTC_ZERO;
-
-            // dispatch(setXverseBtc(xverseBtc));
-
             setWalletConnection({
               ...walletConnection,
               [XVERSE_WALLET_KEY]: {
@@ -169,7 +166,6 @@ const Nav = (props) => {
                 btcBalance: xverseBtc,
               },
             });
-            // collapseConnectedModal();
             setActiveConnections([...activeConnections, XVERSE_WALLET_KEY]);
             setActiveAddresses({
               ...activeAddresses,
@@ -807,7 +803,7 @@ const Nav = (props) => {
         })}
 
         <Row>
-          <Col>
+          <Col xs={24}>
             <Tabs
               activeKey={tabKey}
               onChange={(e) => {
